@@ -39,4 +39,43 @@ public static class SystemProfiler {
         }
         return devices;
     }
+    public static List<DeviceData> PhysicalDevicesMacOS26() {
+        var profiler = AppleSdkLocator.SystemProfilerTool();
+        var devices = new List<DeviceData>();
+        var regex = new Regex(@"(?<dev>iPhone|iPad):[^,]*?Serial\sNumber:\s+(?<id>\S+)[^,]*?USB\sProduct\sVersion:\s+(?<ver>\S+)");
+
+        ProcessResult result = new ProcessRunner(profiler, new ProcessArgumentBuilder()
+            .Append("SPUSBHostDataType"))
+            .WaitForExit();
+
+        if (!result.Success)
+            throw new InvalidOperationException(string.Join(Environment.NewLine, result.StandardError));
+
+        var output = string.Join(Environment.NewLine, result.StandardOutput);
+
+        foreach (Match match in regex.Matches(output)) {
+            var version = match.Groups["ver"].Value;
+            try 
+            {
+                version = $"{version.Substring(2, 2)}.{version.Substring(4)}";
+            } catch {}
+            var device = match.Groups["dev"].Value;
+            var serial = match.Groups["id"].Value;
+            //For modern iOS devices, the serial number is 24 characters long
+            if (serial.Length == 24)
+                serial = serial.Insert(8, "-");
+
+            devices.Add(new DeviceData {
+                IsEmulator = false,
+                IsRunning = true,
+                IsMobile = true,
+                RuntimeId = Runtimes.iOSArm64,
+                Name = $"{device} {version}",
+                Detail = Details.iOSDevice,
+                Platform = Platforms.iOS,
+                Serial = serial
+            });
+        }
+        return devices;
+    }
 }

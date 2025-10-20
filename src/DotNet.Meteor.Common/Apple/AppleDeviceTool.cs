@@ -46,7 +46,10 @@ public static class AppleDeviceTool {
         return devices;
     }
     public static List<DeviceData> PhysicalDevices() {
-        return SystemProfiler.PhysicalDevices();
+        var devices = new List<DeviceData>();
+        devices.AddRange(SystemProfiler.PhysicalDevices());
+        devices.AddRange(SystemProfiler.PhysicalDevicesMacOS26());
+        return devices;
     }
     public static List<DeviceData> MacintoshDevices() {
         var devices = new List<DeviceData>();
